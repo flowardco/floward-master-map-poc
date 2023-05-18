@@ -1,23 +1,22 @@
 import logo from './logo.svg';
 import './App.css';
+import MapComponent from './components/MapComponent';
 
 function App() {
+  const handlePolygonAdded = polygon => {
+    console.log("Polygon added:", polygon);
+  };
+
+  const handlePolygonEdited = polygon => {
+    console.log("Polygon edited:", polygon);
+  };
+
+  const handlePolygonDeleted = polygon => {
+    console.log("Polygon deleted:", polygon);
+  };
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <MapComponent />
     </div>
   );
 }
