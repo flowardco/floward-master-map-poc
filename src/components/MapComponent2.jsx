@@ -309,7 +309,7 @@ const MapComponent2 = ({ areaList = [] }) => {
     <>
       <div className="page-header">
         <button type="button" onClick={toggleHeatMap}>
-          Turn On Heat Map
+          Toggle Heat Map
         </button>
         <button type="button" onClick={showHeatMapWithWeightage}>
           Heat Map With Weightage
