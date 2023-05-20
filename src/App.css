@@ -76,9 +76,12 @@
 }
 
 .areaListItemTitle {
-  display: block;
+  display: flex;
   font-weight: 600;
   font-size: 14px;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
 }
 
 .areaListItemCordinate{

@@ -17,8 +17,8 @@ const polygonOptions = {
   strokeOpacity: 1,
   strokeWeight: 2,
   clickable: true,
-  editable: true,
-  draggable: true,
+  editable: false,
+  draggable: false,
   zIndex: 1,
 };
 
@@ -31,6 +31,7 @@ const MapComponent2 = ({ areaList = [] }) => {
   const selectedArea = useRef();
   const isProcessingPolygons = useRef();
   const [areaPolygons, setAreaPolygons] = useState(areaList);
+  const [polygonsArray, setPolygonsArray] = useState([]);
   const [heatMapPositions, setHeatMapPositions] = useState(heatMapData);
   const [enableHeadMap, setEnableHeadMap] = useState(false);
 
@@ -49,25 +50,45 @@ const MapComponent2 = ({ areaList = [] }) => {
     selectedArea.current = area;
   };
 
+  const onPolygonSelected = (polygon, selected = false) => {
+    polygon.setOptions({
+      editable: selected,
+      draggable: selected,
+      fillColor: selected ? "#116d87" : "#ffff00",
+      strokeColor: selected ? "#116d87" : "#ffa500",
+      fillOpacity: selected ? 0.6 : 0.4,
+    });
+  };
+
+  const resetAllPolygonEditable = () => {
+    console.log(polygonsArray);
+    polygonsArray.forEach((polygon) => onPolygonSelected(polygon, false));
+  };
+
   const updateAreaPolygonsData = (area, geoCordinates) => {
     if (isProcessingPolygons.current) {
-      console.log(
+      // todo - handle if already processing (edge case)
+      console.error(
         "return if isProcessingPolygons.current",
         isProcessingPolygons.current
       );
     }
     //
     isProcessingPolygons.current = true;
-    const updatedData = areaPolygons?.map((areaItem) => {
-      if (areaItem.id !== area.id) {
+
+    setAreaPolygons((val) => {
+      const updatedData = val?.map((areaItem) => {
+        if (areaItem.id === area.id) {
+          return {
+            ...areaItem,
+            geoCordinates,
+          };
+        }
         return areaItem;
-      }
-      return {
-        ...areaItem,
-        geoCordinates,
-      };
+      });
+      return updatedData;
     });
-    setAreaPolygons(updatedData);
+
     isProcessingPolygons.current = false;
   };
 
@@ -84,13 +105,19 @@ const MapComponent2 = ({ areaList = [] }) => {
     return convertedLatLng;
   };
 
+  const addPolygonsToArray = (polygon) => {
+    setPolygonsArray((val) => val.concat(polygon));
+  };
+
   const onPolygonAdded = (polygon, area) => {
     const convertedLatLng = convertPolygonArray(polygon);
     updateAreaPolygonsData(area, convertedLatLng);
+    addPolygonsToArray(polygon);
   };
 
-  const onAreaPolygonSelectFromMap = (event, area) => {
-    console.log("onAreaPolygonSelectFromMap", event, area);
+  const onAreaPolygonSelectFromMap = (area) => {
+    // when polygon is clicked, trigger area selected from current polygon data,
+    handleAreaClick(area);
   };
 
   const onPolygonUpdate = (polygon, area) => {
@@ -98,8 +125,20 @@ const MapComponent2 = ({ areaList = [] }) => {
     updateAreaPolygonsData(area, convertedLatLng);
   };
 
+  const handleDeletePolygon = (polygon, area) => {
+    updateAreaPolygonsData(area, []);
+    polygon.setMap(null);
+    setPolygonsArray((val) =>
+      val.filter(
+        (polygonItem) =>
+          polygonItem?.flowardArea?.id !== polygon?.flowardArea?.id
+      )
+    );
+  };
+
   const initAllAreasPolygonOnMap = (areas, map, maps) => {
     if (areas && areas?.length > 0 && map && maps) {
+      const preloadedPolygons = [];
       areas.forEach((areaItem) => {
         const areaItemPolygonData = areaItem?.geoCordinates || [];
         // check if have lat lng for area polygon
@@ -113,7 +152,7 @@ const MapComponent2 = ({ areaList = [] }) => {
           areaItemPolygon.setMap(map);
 
           areaItemPolygon.addListener("click", () => {
-            onAreaPolygonSelectFromMap(areaItemPolygon, areaItem);
+            onAreaPolygonSelectFromMap(areaItem, areaItemPolygon);
           });
 
           maps.event.addListener(areaItemPolygon.getPath(), "set_at", () => {
@@ -127,8 +166,11 @@ const MapComponent2 = ({ areaList = [] }) => {
           maps.event.addListener(areaItemPolygon.getPath(), "remove_at", () => {
             onPolygonUpdate(areaItemPolygon, areaItem);
           });
+          preloadedPolygons.push(areaItemPolygon);
         }
       });
+      // add all polygons to the array
+      addPolygonsToArray(preloadedPolygons);
     }
   };
 
@@ -142,13 +184,16 @@ const MapComponent2 = ({ areaList = [] }) => {
       },
       polygonOptions,
     });
+    drawingManager.setMap(map);
+    setGMapsDrawingManager(drawingManager);
+
     maps.event.addListener(drawingManager, "polygoncomplete", (polygon) => {
       const currentSlectedArea = selectedArea.current;
       if (currentSlectedArea) {
         // we associate each polygon with currently selected area
         polygon.flowardArea = currentSlectedArea;
         polygon.addListener("click", () =>
-          onAreaPolygonSelectFromMap(polygon, currentSlectedArea)
+          onAreaPolygonSelectFromMap(currentSlectedArea, polygon)
         );
         maps.event.addListener(polygon.getPath(), "set_at", () => {
           onPolygonUpdate(polygon, currentSlectedArea);
@@ -160,16 +205,48 @@ const MapComponent2 = ({ areaList = [] }) => {
           onPolygonUpdate(polygon, currentSlectedArea);
         });
         onPolygonAdded(polygon, currentSlectedArea);
+        drawingManager.setOptions({
+          drawingMode: null,
+          drawingControlOptions: {
+            drawingModes: [],
+          },
+        });
       } else {
         // Do not add any polygon if no currently selected item
         polygon.setMap(null);
       }
     });
-    drawingManager.setMap(map);
-    setGMapsDrawingManager(drawingManager);
   };
 
-  const handleApiLoaded = (map, maps) => {
+  const handleDrawingToolForArea = (drawingManager, area, maps, polygons) => {
+    if (drawingManager && area && maps) {
+      // before enabling polygon tool, we check if a polygon already added for this area or not
+      // if added, don't enable polygon againn (to avoid adding multiple polygons to same area)
+      const areaPolygon = polygons?.find(
+        (polygon) => polygon?.flowardArea?.id === area?.id
+      );
+      const hasPolygon = !!areaPolygon;
+      resetAllPolygonEditable();
+
+      drawingManager.setOptions({
+        drawingControlOptions: {
+          drawingModes: hasPolygon ? [] : [gMaps.drawing.OverlayType.POLYGON],
+        },
+      });
+      if (hasPolygon) {
+        onPolygonSelected(areaPolygon, true);
+      }
+    } else if (drawingManager && gMaps) {
+      drawingManager.setOptions({
+        drawingMode: null,
+        drawingControlOptions: {
+          drawingModes: [],
+        },
+      });
+    }
+  };
+
+  const handleMapApiLoaded = (map, maps) => {
     setGMap(map);
     setGMaps(maps);
   };
@@ -189,38 +266,44 @@ const MapComponent2 = ({ areaList = [] }) => {
 
   // Toggle Drawing tool once an area is selected and we have initialized
   useEffect(() => {
-    if (gMapsDrawingManager && currentArea && gMaps) {
-      gMapsDrawingManager.setOptions({
-        drawingControlOptions: {
-          drawingModes: [gMaps.drawing.OverlayType.POLYGON],
-        },
-      });
-    } else if (gMapsDrawingManager && gMaps) {
-      gMapsDrawingManager.setOptions({
-        drawingControlOptions: {
-          drawingModes: [],
-        },
-      });
-    }
-  }, [gMapsDrawingManager, currentArea, gMaps]);
+    handleDrawingToolForArea(
+      gMapsDrawingManager,
+      currentArea,
+      gMaps,
+      polygonsArray
+    );
+  }, [gMapsDrawingManager, currentArea, gMaps, polygonsArray]);
 
-  const AreaListComp = ({ itm }) => (
-    <>
-      <div
-        onClick={() => handleAreaClick(itm)}
-        className={`areaListItem ${
-          currentArea?.id === itm.id ? "selected" : ""
-        }`}
-      >
-        <span className="areaListItemTitle">
-          {itm.id} - {itm.name}
-        </span>
-        <pre className="areaListItemCordinate">
-          {JSON.stringify(itm.geoCordinates, null, 2)}
-        </pre>
-      </div>
-    </>
-  );
+  console.log(polygonsArray, areaPolygons);
+
+  const AreaListComp = ({ area }) => {
+    const isSelected = currentArea?.id === area.id || false;
+    const areaPolygon =
+      polygonsArray?.find((polygon) => polygon?.flowardArea?.id === area?.id) ||
+      null;
+    return (
+      <>
+        <div
+          onClick={() => handleAreaClick(area)}
+          className={`areaListItem ${isSelected ? "selected" : ""}`}
+        >
+          <div className="areaListItemTitle">
+            <span>
+              {area.id} - {area.name}
+            </span>
+            {areaPolygon ? (
+              <button onClick={() => handleDeletePolygon(areaPolygon, area)}>
+                Delete Polygon
+              </button>
+            ) : null}
+          </div>
+          <pre className="areaListItemCordinate">
+            {JSON.stringify(area.geoCordinates, null, 2)}
+          </pre>
+        </div>
+      </>
+    );
+  };
 
   return (
     <>
@@ -247,7 +330,7 @@ const MapComponent2 = ({ areaList = [] }) => {
             defaultCenter={defaultCenter}
             defaultZoom={11}
             yesIWantToUseGoogleMapApiInternals
-            onGoogleApiLoaded={({ map, maps }) => handleApiLoaded(map, maps)}
+            onGoogleApiLoaded={({ map, maps }) => handleMapApiLoaded(map, maps)}
             heatmap={{
               positions: enableHeadMap ? heatMapPositions : [],
               options: {
@@ -262,7 +345,7 @@ const MapComponent2 = ({ areaList = [] }) => {
           {gMap && gMaps && gMapsDrawingManager ? (
             <>
               {areaPolygons?.map((itm) => (
-                <AreaListComp itm={itm} key={itm.id} />
+                <AreaListComp area={itm} key={itm.id} />
               ))}
             </>
           ) : null}
