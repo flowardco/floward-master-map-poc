@@ -36,3 +36,59 @@
     transform: rotate(360deg);
   }
 }
+.page-header{
+  display: flex;
+  padding: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+}
+
+.page-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.map-holder {
+  display: block;
+  width: 70%;
+  height: calc(100vh - 4rem);
+}
+
+.arealist-holder {
+  width: 30%;
+  display: block;
+  overflow: auto;
+  max-height: calc(100vh - 4rem);
+}
+
+.areaListItem {
+  padding: 1rem 0.5rem;
+  border-bottom: 1px #ccc solid;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.areaListItem.selected {
+  background: #e6f2cb;
+}
+
+.areaListItemTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.areaListItemCordinate{
+  text-align: left;
+  display: block;
+  font-size: 12px;
+  color:#fff;
+  background: #000;
+  padding: 5px;
+}
+.areaListItem.selected .areaListItemCordinate{
+  background: #1b270c;
+}

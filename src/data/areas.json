@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "name": "Area 1",
+    "geoCordinates": []
+  },
+  {
+    "id": 2,
+    "name": "Area 2",
+    "geoCordinates": []
+  },
+  {
+    "id": 3,
+    "name": "Area 3",
+    "geoCordinates": []
+  },
+  {
+    "id": 4,
+    "name": "Area 4",
+    "geoCordinates": []
+  },
+  {
+    "id": 5,
+    "name": "Area 5",
+    "geoCordinates": []
+  },
+  {
+    "id": 6,
+    "name": "Area 6",
+    "geoCordinates": []
+  },
+  {
+    "id": 7,
+    "name": "Area 7",
+    "geoCordinates": []
+  },
+  {
+    "id": 8,
+    "name": "Area 8",
+    "geoCordinates": []
+  },
+  {
+    "id": 9,
+    "name": "Area 9",
+    "geoCordinates": []
+  },
+  {
+    "id": 10,
+    "name": "Area 10",
+    "geoCordinates": []
+  },
+  {
+    "id": 11,
+    "name": "Area 11",
+    "geoCordinates": [
+      {
+        "lat": 25.212397473185135,
+        "lng": 55.39849950574494
+      },
+      {
+        "lat": 25.180710510078143,
+        "lng": 55.47815038465119
+      },
+      {
+        "lat": 25.30058043849005,
+        "lng": 55.499436395393374
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Area 12",
+    "geoCordinates": []
+  },
+  {
+    "id": 13,
+    "name": "Area 13",
+    "geoCordinates": []
+  },
+  {
+    "id": 14,
+    "name": "Area 14",
+    "geoCordinates": [
+      {
+        "lat": 25.017796751005605,
+        "lng": 55.219285028205874
+      },
+      {
+        "lat": 25.109229283330723,
+        "lng": 55.21035863660431
+      },
+      {
+        "lat": 25.056990476779315,
+        "lng": 55.36004735730744
+      },
+      {
+        "lat": 24.916955446780428,
+        "lng": 55.3305216004715
+      }
+    ]
+  }
+]
